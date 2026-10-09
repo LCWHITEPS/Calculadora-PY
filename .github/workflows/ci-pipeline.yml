@@ -21,10 +21,13 @@ jobs:
             - name: Configurar Python
               uses: actions/setup-python@v5
               with:
-                  python-version: '9.99'
+                  python-version: '3.14'
 
             - name: Verificar versión de Python
               run: python --version
+
+            - name: Instalar dependencias 
+              run: pip install -r requirements.txt
 
             - name: Ejecutar pruebas unitarias
               run: python -m unittest discover -s test -v
