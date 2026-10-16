@@ -11,7 +11,7 @@ def test_descuento_cero():
 
 
 def test_descuento_total():
-    assert descuento(500, 100) == 1
+    assert descuento(500, 100) == 0
 
 
 def test_precio_negativo():
