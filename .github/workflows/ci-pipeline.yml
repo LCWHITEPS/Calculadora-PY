@@ -10,6 +10,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   pruebas:
     name: Ejecutar pruebas unitarias
@@ -35,3 +38,34 @@ jobs:
 
       - name: Ejecutar pruebas de descuento con pytest
         run: python -m pytest tests -v
+
+  publicar:
+    name: Publicar página en GitHub Pages
+    if: github.event_name != 'pull_request'
+    needs: pruebas
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Descargar código del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Preparar archivos de la página
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Publicar página
+        id: deployment
+        uses: actions/deploy-pages@v4
