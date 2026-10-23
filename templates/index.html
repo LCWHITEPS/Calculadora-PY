@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <title>Calculadora PY | Operaciones inteligentes</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="{{ url_for('inicio') }}">
+        <span class="brand-icon">∑</span>
+        <span><strong>Calculadora<span class="accent">PY</span></strong><small>HERRAMIENTA DE CÁLCULO</small></span>
+      </a>
+      <span class="status"><i></i> SISTEMA ACTIVO</span>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow">PRECISIÓN · RAPIDEZ · PYTHON</p>
+      <h1>Tus números,<br><span>sin complicaciones.</span></h1>
+      <p class="intro-copy">Realiza operaciones matemáticas y calcula descuentos desde una interfaz sencilla, moderna y rápida.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="calculator panel">
+        <div class="panel-heading">
+          <div><p class="eyebrow">CALCULADORA WEB</p><h2>Realizar cálculo</h2></div>
+          <span class="mini-symbol">⌗</span>
+        </div>
+
+        {% if error %}
+        <div class="alert error" role="alert"><span>!</span><div><strong>No se pudo calcular</strong><p>{{ error }}</p></div></div>
+        {% endif %}
+
+        <form action="{{ url_for('calcular') }}" method="post" id="calc-form">
+          <label for="operacion">Tipo de operación</label>
+          <div class="select-wrap">
+            <select id="operacion" name="operacion">
+              <option value="suma" {% if valores.operacion == 'suma' %}selected{% endif %}>＋ Suma</option>
+              <option value="resta" {% if valores.operacion == 'resta' %}selected{% endif %}>− Resta</option>
+              <option value="multiplicacion" {% if valores.operacion == 'multiplicacion' %}selected{% endif %}>× Multiplicación</option>
+              <option value="division" {% if valores.operacion == 'division' %}selected{% endif %}>÷ División</option>
+              <option value="potencia" {% if valores.operacion == 'potencia' %}selected{% endif %}>xʸ Potencia</option>
+              <option value="descuento" {% if valores.operacion == 'descuento' %}selected{% endif %}>％ Calcular descuento</option>
+            </select>
+          </div>
+
+          <div class="fields">
+            <div class="field">
+              <label for="num1" id="label-num1">Primer número <span>*</span></label>
+              <input id="num1" name="num1" type="number" step="any" required value="{{ valores.num1 }}" placeholder="Ej. 125">
+            </div>
+            <div class="field" id="field-num2">
+              <label for="num2">Segundo número <span>*</span></label>
+              <input id="num2" name="num2" type="number" step="any" value="{{ valores.num2 }}" placeholder="Ej. 25">
+            </div>
+            <div class="field hidden" id="field-porcentaje">
+              <label for="porcentaje">Descuento (%) <span>*</span></label>
+              <input id="porcentaje" name="porcentaje" type="number" min="0" max="100" step="any" value="{{ valores.porcentaje }}" placeholder="Ej. 15">
+            </div>
+          </div>
+
+          <button class="primary-btn" type="submit">Calcular resultado <span>↗</span></button>
+          <p class="form-note"><span>◆</span> El cálculo se procesa con Python.</p>
+        </form>
+
+        {% if resultado is not none %}
+        <div class="result-card" aria-live="polite">
+          <div class="result-top"><span>RESULTADO</span><span class="result-check">✓</span></div>
+          <p class="expression">{{ expresion }}</p>
+          <div class="result-value">{{ "{:,.8f}".format(resultado).rstrip("0").rstrip(".") }}</div>
+          <p class="result-foot">Cálculo completado correctamente</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <aside class="side-column">
+        <div class="feature-card panel">
+          <div class="feature-icon purple">％</div><div><h3>Descuentos</h3><p>Calcula el precio final de un producto con porcentajes del 0 al 100.</p></div>
+        </div>
+        <div class="feature-card panel">
+          <div class="feature-icon blue">↗</div><div><h3>Historial reciente</h3><p>Consulta los últimos cálculos de esta sesión sin perder el contexto.</p></div>
+        </div>
+        <div class="history panel">
+          <div class="history-heading"><div><p class="eyebrow">ACTIVIDAD</p><h2>Historial</h2></div>
+            {% if historial %}<form action="{{ url_for('limpiar_historial') }}" method="post"><button class="clear-btn" type="submit">Limpiar</button></form>{% endif %}
+          </div>
+          {% if historial %}
+            <ul class="history-list">
+              {% for item in historial %}
+              <li><span class="history-dot"></span><div><p>{{ item.expresion }}</p><strong>{{ item.resultado }}</strong></div></li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="empty-history"><span>⌁</span><p>Aún no hay cálculos.</p><small>Tu actividad reciente aparecerá aquí.</small></div>
+          {% endif %}
+        </div>
+      </aside>
+    </section>
+    <footer><span>Calculadora PY</span><span>Desarrollada con Python + Flask</span><span>U2 · Proyecto Deploy</span></footer>
+  </main>
+<script>
+(function () {
+  const op = document.getElementById('operacion');
+  const field2 = document.getElementById('field-num2');
+  const fieldPct = document.getElementById('field-porcentaje');
+  const input2 = document.getElementById('num2');
+  const inputPct = document.getElementById('porcentaje');
+  const label1 = document.getElementById('label-num1');
+  function updateFields() {
+    const discount = op.value === 'descuento';
+    field2.classList.toggle('hidden', discount);
+    fieldPct.classList.toggle('hidden', !discount);
+    input2.required = !discount;
+    inputPct.required = discount;
+    label1.innerHTML = discount ? 'Precio original <span>*</span>' : 'Primer número <span>*</span>';
+    document.getElementById('num1').placeholder = discount ? 'Ej. 899.99' : 'Ej. 125';
+  }
+  op.addEventListener('change', updateFields);
+  updateFields();
+})();
+</script>
+</body>
+</html>
