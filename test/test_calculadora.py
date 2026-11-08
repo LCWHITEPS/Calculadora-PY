@@ -31,7 +31,7 @@ class TestCalculadora(unittest.TestCase):
 
     def test_resta(self):
         salida = ejecutar_calculadora("2\n8\n3\n6\n")
-        self.assertIn("Resultado: 50.0", salida)
+        self.assertIn("Resultado: 5.0", salida)
 
     def test_multiplicacion(self):
         salida = ejecutar_calculadora("3\n4\n5\n6\n")
