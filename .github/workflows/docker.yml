@@ -1,0 +1,76 @@
+
+name: Pruebas y despliegue Docker
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+
+  pruebas:
+    name: Ejecutar pruebas Pytest
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Ejecutar pruebas
+        run: python -m pytest tests -v
+
+  construir:
+    name: Construir y publicar imagen Docker
+    runs-on: ubuntu-latest
+    needs: pruebas
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Iniciar sesión en Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Construir y publicar imagen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/render-flask-sue:latest
+
+  aviso_fallo:
+    name: Aviso de publicación cancelada
+    runs-on: ubuntu-latest
+    needs: pruebas
+    if: ${{ failure() && needs.pruebas.result == 'failure' }}
+
+    steps:
+      - name: Informar que no se construyó la imagen
+        run: |
+          echo "=========================================="
+          echo "ERROR: LAS PRUEBAS PYTEST HAN FALLADO"
+          echo "=========================================="
+          echo "La imagen Docker NO fue construida."
+          echo "La imagen NO fue publicada en Docker Hub."
+          echo "Se canceló el proceso debido a errores en las pruebas."
+          echo "=========================================="
+
+          echo "## Publicación Docker cancelada" >> $GITHUB_STEP_SUMMARY
+          echo "Las pruebas automatizadas fallaron." >> $GITHUB_STEP_SUMMARY
+          echo "La imagen Docker NO fue construida ni publicada." >> $GITHUB_STEP_SUMMARY
